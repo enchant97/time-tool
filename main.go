@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/enchant97/time-tool/cli"
+)
+
+// set this during build
+var Version = "unknown"
 
 func main() {
-	fmt.Println("Hello World!")
+	if err := cli.Entrypoint(Version); err != nil {
+		fmt.Println(err)
+	}
 }
