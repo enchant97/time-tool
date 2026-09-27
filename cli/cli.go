@@ -2,13 +2,22 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"os"
 
+	"github.com/enchant97/time-tool/core"
 	"github.com/enchant97/time-tool/tui"
 	"github.com/urfave/cli/v3"
 )
 
 func Entrypoint(appVersion string) error {
+	config, err := core.ReadConfig()
+	if errors.Is(err, os.ErrNotExist) {
+		config.DefaultUnset()
+		core.WriteConfig(config)
+	} else if err != nil {
+		return err
+	}
 	app := &cli.Command{
 		Version:               appVersion,
 		Copyright:             "Copyright (c) 2026 Leo Spratt",
@@ -20,18 +29,16 @@ func Entrypoint(appVersion string) error {
 				Usage: "output the current time",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "layout",
-						Value: "RFC3339",
+						Name: "layout",
 					},
 					&cli.StringFlag{
 						Name:  "location",
-						Value: "Local",
 						Usage: "IANA Time Zone Location name",
 					},
 				},
 				Action: func(ctx context.Context, c *cli.Command) error {
-					timeLayout := c.String("layout")
-					timeLocation := c.String("location")
+					timeLayout := core.DefaultIfUnset(c.String("layout"), config.Layout, "")
+					timeLocation := core.DefaultIfUnset(c.String("location"), config.Location, "")
 					return commandNow(timeLayout, timeLocation)
 				},
 			},

@@ -4,6 +4,8 @@ go 1.26.7
 
 require (
 	github.com/gdamore/tcell/v2 v2.13.10
+	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
+	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/rivo/tview v0.42.0
 	github.com/urfave/cli/v3 v3.13.0
 )
