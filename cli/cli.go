@@ -18,8 +18,21 @@ func Entrypoint(appVersion string) error {
 			{
 				Name:  "now",
 				Usage: "output the current time",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "layout",
+						Value: "RFC3339",
+					},
+					&cli.StringFlag{
+						Name:  "location",
+						Value: "Local",
+						Usage: "IANA Time Zone Location name",
+					},
+				},
 				Action: func(ctx context.Context, c *cli.Command) error {
-					return commandNow()
+					timeLayout := c.String("layout")
+					timeLocation := c.String("location")
+					return commandNow(timeLayout, timeLocation)
 				},
 			},
 			{
