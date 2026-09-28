@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -12,16 +13,17 @@ func DefaultIfUnset[T comparable](v, d, u T) T {
 }
 
 func LayoutAsGoTimeLayout(v string) string {
-	switch v {
-	case "RFC1123":
-		return time.RFC1123
-	case "RFC3339":
-		return time.RFC3339
+	if v, ok := TimeLayoutMappings[v]; ok {
+		return v
 	}
 	return v
 }
 
 func TimeToHuman(t time.Time, config Config) (string, error) {
+	switch config.Layout {
+	case "Unix":
+		return fmt.Sprintf("%d", t.Unix()), nil
+	}
 	location, err := time.LoadLocation(config.Location)
 	if err != nil {
 		return "", err
