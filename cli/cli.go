@@ -18,6 +18,15 @@ func Entrypoint(appVersion string) error {
 	} else if err != nil {
 		return err
 	}
+	overrideFlags := []cli.Flag{
+		&cli.StringFlag{
+			Name: "layout",
+		},
+		&cli.StringFlag{
+			Name:  "location",
+			Usage: "IANA Time Zone Location name",
+		},
+	}
 	app := &cli.Command{
 		Version:               appVersion,
 		Copyright:             "Copyright (c) 2026 Leo Spratt",
@@ -27,33 +36,30 @@ func Entrypoint(appVersion string) error {
 			{
 				Name:  "now",
 				Usage: "output the current time",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name: "layout",
-					},
-					&cli.StringFlag{
-						Name:  "location",
-						Usage: "IANA Time Zone Location name",
-					},
-				},
+				Flags: overrideFlags,
 				Action: func(ctx context.Context, c *cli.Command) error {
-					timeLayout := core.DefaultIfUnset(c.String("layout"), config.Layout, "")
-					timeLocation := core.DefaultIfUnset(c.String("location"), config.Location, "")
-					return commandNow(timeLayout, timeLocation)
+					overridedConfig := config
+					overridedConfig.Layout = core.DefaultIfUnset(c.String("layout"), config.Layout, "")
+					overridedConfig.Location = core.DefaultIfUnset(c.String("location"), config.Location, "")
+					return commandNow(overridedConfig)
 				},
 			},
 			{
 				Name:  "ticker",
 				Usage: "output the current time at an interval",
+				Flags: overrideFlags,
 				Action: func(ctx context.Context, c *cli.Command) error {
-					return commandTicker()
+					overridedConfig := config
+					overridedConfig.Layout = core.DefaultIfUnset(c.String("layout"), config.Layout, "")
+					overridedConfig.Location = core.DefaultIfUnset(c.String("location"), config.Location, "")
+					return commandTicker(overridedConfig)
 				},
 			},
 			{
 				Name:  "tui",
 				Usage: "launch the terminal user interface",
 				Action: func(ctx context.Context, c *cli.Command) error {
-					return tui.Entrypoint()
+					return tui.Entrypoint(config)
 				},
 			},
 		},

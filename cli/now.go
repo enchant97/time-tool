@@ -3,20 +3,15 @@ package cli
 import (
 	"fmt"
 	"time"
+
+	"github.com/enchant97/time-tool/core"
 )
 
-func commandNow(timeLayout string, timeLocation string) error {
-	location, err := time.LoadLocation(timeLocation)
+func commandNow(config core.Config) error {
+	timeString, err := core.TimeToHuman(time.Now(), config)
 	if err != nil {
 		return err
 	}
-	now := time.Now().In(location)
-	switch timeLayout {
-	case "RFC1123":
-		timeLayout = time.RFC1123
-	case "RFC3339":
-		timeLayout = time.RFC3339
-	}
-	fmt.Println(now.Format(timeLayout))
+	fmt.Println(timeString)
 	return nil
 }
