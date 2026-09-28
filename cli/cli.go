@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/enchant97/time-tool/core"
@@ -10,7 +11,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func Entrypoint(appVersion string) error {
+func Entrypoint(appVersion string, docFileContent string) error {
 	config, err := core.ReadConfig()
 	if errors.Is(err, os.ErrNotExist) {
 		config.DefaultUnset()
@@ -60,6 +61,14 @@ func Entrypoint(appVersion string) error {
 				Usage: "launch the terminal user interface",
 				Action: func(ctx context.Context, c *cli.Command) error {
 					return tui.Entrypoint(config)
+				},
+			},
+			{
+				Name:  "doc",
+				Usage: "output documentation as markdown",
+				Action: func(ctx context.Context, c *cli.Command) error {
+					fmt.Println(docFileContent)
+					return nil
 				},
 			},
 		},
