@@ -35,6 +35,9 @@ func commandNtpV4Query(server string, enableNTS bool, timeout uint16) error {
 		if err != nil {
 			return err
 		}
+		if err := response.Validate(); err != nil {
+			fmt.Println(err)
+		}
 		response.Log(os.Stdout)
 	}
 	return nil
