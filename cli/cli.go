@@ -71,6 +71,34 @@ func Entrypoint(appVersion string, docFileContent string) error {
 					return nil
 				},
 			},
+			{
+				Name:  "ntp4",
+				Usage: "query a NTPv4 server and output full response",
+				Flags: []cli.Flag{
+					&cli.Uint16Flag{
+						Name:  "timeout",
+						Usage: "timeout in seconds of ntp request",
+						Value: 5,
+					},
+					&cli.BoolFlag{
+						Name:  "nts",
+						Usage: "enable nts (experimental)",
+						Value: false,
+					},
+				},
+				Arguments: []cli.Argument{
+					&cli.StringArg{
+						Name:     "server",
+						Required: true,
+					},
+				},
+				Action: func(ctx context.Context, c *cli.Command) error {
+					server := c.StringArg("server")
+					timeout := c.Uint16("timeout")
+					enableNTS := c.Bool("nts")
+					return commandNtpV4Query(server, enableNTS, timeout)
+				},
+			},
 		},
 	}
 	return app.Run(context.Background(), os.Args)
