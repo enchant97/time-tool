@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/enchant97/time-tool/core"
@@ -21,6 +24,8 @@ func (c *configHandler) Get() core.Config {
 }
 
 var globalConfig configHandler
+var clockOffset time.Duration = 0
+var Stratum uint8 = 0
 
 func createPage(inner tview.Primitive, name string) tview.Primitive {
 	return tview.NewFrame(inner).
@@ -34,10 +39,39 @@ func createPage(inner tview.Primitive, name string) tview.Primitive {
 func createConfigPage(switchToMenu func()) tview.Primitive {
 	storedConfig := globalConfig.Get()
 	form := tview.NewForm().
-		AddInputField("Location", storedConfig.Location, 20, nil, func(text string) { storedConfig.Location = text }).
-		AddInputField("Layout", storedConfig.Layout, 20, nil, func(text string) { storedConfig.Layout = text }).
+		AddInputField("Location", storedConfig.Location, 20, nil, func(text string) {
+			storedConfig.Location = text
+		}).
+		AddInputField("Layout", storedConfig.Layout, 20, nil, func(text string) {
+			storedConfig.Layout = text
+		}).
+		AddCheckbox("NTP Client - Enable", storedConfig.NTPClient.Enable, func(checked bool) {
+			storedConfig.NTPClient.Enable = checked
+		}).
+		AddInputField("NTP Client - Server", storedConfig.NTPClient.Server, 20, nil, func(text string) {
+			storedConfig.NTPClient.Server = text
+		}).
+		AddInputField("NTP Client - Timeout", fmt.Sprint(storedConfig.NTPClient.Timeout), 20, nil, func(text string) {
+			if timeout, err := strconv.ParseUint(text, 10, 16); err == nil {
+				storedConfig.NTPClient.Timeout = uint16(timeout)
+			} else {
+				storedConfig.NTPClient.Timeout = 5
+			}
+		}).
 		AddButton("Save", func() {
 			storedConfig.DefaultUnset()
+			if storedConfig.NTPClient.Enable {
+				resp, err := core.NTPQuery(core.NTPQueryOptions{
+					Server: storedConfig.NTPClient.Server,
+					Timout: time.Duration(storedConfig.NTPClient.Timeout) * time.Second,
+				})
+				if err != nil {
+					panic(err)
+				}
+
+				clockOffset = resp.ClockOffset
+				Stratum = resp.Stratum
+			}
 			err := core.WriteConfig(storedConfig)
 			if err != nil {
 				panic(err)
@@ -63,16 +97,23 @@ func createTimePage(app *tview.Application, tt *time.Ticker, switchToMenu func()
 	inner := tview.NewModal().
 		AddButtons([]string{"Menu"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) { switchToMenu() })
+	updateTime := func(t time.Time) {
+		config := globalConfig.Get()
+		timeString, err := core.TimeToHuman(t.Add(clockOffset), config)
+		if config.NTPClient.Enable {
+			timeString = fmt.Sprintf("%s %s", strings.Repeat("*", int(Stratum)), timeString)
+		}
+		if err != nil {
+			panic(err)
+		}
+		inner.SetText(timeString)
+	}
+	updateTime(time.Now())
 	go func() {
 		for {
 			t := <-tt.C
 			app.QueueUpdateDraw(func() {
-				config := globalConfig.Get()
-				timeString, err := core.TimeToHuman(t, config)
-				if err != nil {
-					panic(err)
-				}
-				inner.SetText(timeString)
+				updateTime(t)
 			})
 		}
 	}()
@@ -99,6 +140,19 @@ func createMenuPage(app *tview.Application, pages *tview.Pages) tview.Primitive 
 
 func Entrypoint(initialConfig core.Config) error {
 	globalConfig = configHandler{config: initialConfig}
+
+	if initialConfig.NTPClient.Enable {
+		resp, err := core.NTPQuery(core.NTPQueryOptions{
+			Server: initialConfig.NTPClient.Server,
+			Timout: time.Duration(initialConfig.NTPClient.Timeout) * time.Second,
+		})
+		if err != nil {
+			return err
+		}
+		clockOffset = resp.ClockOffset
+		Stratum = resp.Stratum
+	}
+
 	app := tview.NewApplication()
 	app.SetTitle("TUI Time Tool")
 	pages := tview.NewPages()

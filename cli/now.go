@@ -8,7 +8,20 @@ import (
 )
 
 func commandNow(config core.Config) error {
-	timeString, err := core.TimeToHuman(time.Now(), config)
+	var clockOffset time.Duration = 0
+
+	if config.NTPClient.Enable {
+		resp, err := core.NTPQuery(core.NTPQueryOptions{
+			Server: config.NTPClient.Server,
+			Timout: time.Duration(config.NTPClient.Timeout) * time.Second,
+		})
+		if err != nil {
+			return err
+		}
+		clockOffset = resp.ClockOffset
+	}
+
+	timeString, err := core.TimeToHuman(time.Now().Add(clockOffset), config)
 	if err != nil {
 		return err
 	}
