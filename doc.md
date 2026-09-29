@@ -1,5 +1,5 @@
 ## Layouts
-The time can be displayed in different layouts. Use the below table to find the desired format. You can also specify a standard go time layout values.
+The time can be displayed in different layouts. Use the below table to find the desired format. You can also specify standard go time layout values.
 
 | Name | Example |
 | :--- | :------ |
@@ -25,4 +25,4 @@ Example Name:
     Europe/London
 
 ## Config File
-The application will store defaults (set via the TUI) in a config file stored the systems config directory under `time-tool/config.toml`.
+The application will store defaults (set via the TUI) in a config file stored the user config directory under `time-tool/config.toml`.
